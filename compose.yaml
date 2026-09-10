@@ -1,0 +1,35 @@
+name: telegram-broadcast
+
+x-service: &service
+  image: telegram-broadcast:local
+  build:
+    context: .
+    target: production
+  env_file: .env
+  environment:
+    DATABASE_PATH: /data/broadcast.sqlite
+  volumes:
+    - bot-data:/data
+  restart: unless-stopped
+  init: true
+  stop_grace_period: 45s
+  security_opt:
+    - no-new-privileges:true
+  cap_drop:
+    - ALL
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+
+services:
+  poll:
+    <<: *service
+    command: ["poll"]
+  worker:
+    <<: *service
+    command: ["worker"]
+
+volumes:
+  bot-data:

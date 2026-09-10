@@ -1,0 +1,112 @@
+#!/usr/bin/env php
+<?php
+declare(strict_types=1);
+
+use Broadcast\Application\Kernel;
+use Broadcast\Application\Worker;
+use Broadcast\Domain\ApiFailure;
+use Broadcast\Infrastructure\Http\DeepLTranslator;
+use Broadcast\Infrastructure\Http\TelegramClient;
+use Broadcast\Infrastructure\Runtime\Config;
+use Broadcast\Infrastructure\Runtime\DailyBackup;
+use Broadcast\Infrastructure\Runtime\Log;
+use Broadcast\Infrastructure\Runtime\Poller;
+use Broadcast\Infrastructure\Runtime\ProcessLock;
+use Broadcast\Infrastructure\Runtime\SqliteBackup;
+use Broadcast\Infrastructure\Runtime\StopSignal;
+use Broadcast\Infrastructure\SqliteStore;
+
+require dirname(__DIR__) . '/vendor/autoload.php';
+
+umask(0077);
+// Convert warnings to exceptions so PHP cannot print paths, input values or a stack trace.
+ini_set('display_errors', '0');
+ini_set('log_errors', '0');
+set_error_handler(static function (int $severity): never {
+    throw new ErrorException('Runtime operation failed.', 0, $severity);
+});
+$log = new Log();
+
+try {
+    $command = $argv[1] ?? 'help';
+    if ($command === 'help') {
+        echo "Commands:\n  poll [--once]\n  worker [--once]\n  migrate\n  backup\n  restore BACKUP_FILE --confirm\n";
+        exit(0);
+    }
+    if (!in_array($command, ['poll', 'worker', 'migrate', 'backup', 'restore'], true)) {
+        throw new InvalidArgumentException('Unknown command.');
+    }
+    $path = getenv('DATABASE_PATH');
+    if ($path === false || trim($path) === '' || $path === ':memory:') {
+        throw new InvalidArgumentException('DATABASE_PATH must name a persistent database.');
+    }
+    $runtimeDirectory = dirname($path) . '/runtime';
+    $backupDirectory = dirname($path) . '/backups';
+    $locks = [];
+
+    if (in_array($command, ['migrate', 'restore'], true)) {
+        // Maintenance refuses to run while either process is active.
+        $locks[] = ProcessLock::acquire($runtimeDirectory, 'poll');
+        $locks[] = ProcessLock::acquire($runtimeDirectory, 'worker');
+        if ($command === 'restore') {
+            if (!isset($argv[2]) || !in_array('--confirm', $argv, true)) {
+                throw new InvalidArgumentException('Restore requires a backup path and --confirm.');
+            }
+            $locks[] = ProcessLock::acquire($runtimeDirectory, 'backup');
+            // Keep the pre-restore copy separate: retention must not remove the selected old backup.
+            if (is_file($path)) {
+                (new SqliteBackup())->create($path, $backupDirectory . '/before-restore', preservePath: $argv[2]);
+            }
+            (new SqliteBackup())->restore($argv[2], $path);
+        } else {
+            (new SqliteStore($path))->migrate();
+        }
+        $log->event($command . '_complete');
+        exit(0);
+    }
+    if ($command === 'backup') {
+        $locks[] = ProcessLock::acquire($runtimeDirectory, 'backup');
+        $backup = (new SqliteBackup())->create($path, $backupDirectory);
+        $log->event('backup_complete', ['file' => basename($backup)]);
+        exit(0);
+    }
+
+    $config = Config::fromEnvironment();
+    $locks[] = ProcessLock::acquire($runtimeDirectory, $command);
+    $store = new SqliteStore($path);
+    $store->migrate();
+    $telegram = new TelegramClient($config->telegramToken);
+    $poller = new Poller($store, $telegram, new Kernel($store, $config->adminIds));
+    $worker = new Worker($store, $telegram, new DeepLTranslator($config->deeplApiKey, $config->deeplApiUrl),
+        static function (array $event) use ($log): void {
+            $name = $event['event'];
+            unset($event['event']);
+            $log->event($name, $event);
+        });
+    $dailyBackup = new DailyBackup($path, $backupDirectory, $runtimeDirectory);
+    $stop = new StopSignal();
+    $once = in_array('--once', $argv, true);
+    $log->event('process_started', ['role' => $command]);
+    do {
+        try {
+            if ($command === 'poll') {
+                $count = $poller->once($once ? 0 : 25);
+                if ($count > 0) { $log->event('updates_processed', ['count' => $count]); }
+            } else {
+                try {
+                    if ($dailyBackup->runIfDue()) { $log->event('daily_backup_complete'); }
+                } catch (Throwable $failure) { $log->failure('backup_failed', $failure); }
+                $worker->tick();
+            }
+        } catch (ApiFailure $failure) {
+            if (!$failure->transient || $once) { throw $failure; }
+            $log->failure('poll_deferred', $failure);
+            $stop->pause(max(5, $failure->retryAfter ?? 0));
+        }
+        if (!$once) { $stop->pause($command === 'worker' ? 1.1 : 0.1); }
+    } while (!$once && !$stop->requested);
+    $log->event('process_stopped', ['role' => $command]);
+} catch (Throwable $failure) {
+    $log->failure('command_failed', $failure);
+    exit(1);
+}
