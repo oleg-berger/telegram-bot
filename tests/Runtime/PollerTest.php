@@ -27,7 +27,8 @@ final class PollerTest extends TestCase
         $poller->once();
         $poller->once();
         self::assertSame([0, 11], $offsets);
-        self::assertSame('News', $store->broadcast(1)['text']);
-        self::assertNull($store->broadcast(2));
+        self::assertSame('News', $store->draft(1)['text']);
+        self::assertNull($store->draft(2));
+        self::assertNull($store->broadcast(1));
     }
 }

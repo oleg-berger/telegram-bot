@@ -67,6 +67,28 @@ final class TelegramClientTest extends TestCase
         );
     }
 
+    public function testSendDocumentUploadsMultipartBody(): void
+    {
+        $http = new FakeHttpClient();
+        $http->respond(new HttpResponse(200, '{"ok":true,"result":{"message_id":1}}'));
+        $client = new TelegramClient('token', $http);
+        $path = tempnam(sys_get_temp_dir(), 'document-test-');
+        file_put_contents($path, 'xlsx-bytes');
+
+        try {
+            $client->sendDocument(42, $path, 'users.xlsx');
+        } finally {
+            unlink($path);
+        }
+
+        $request = $http->requests[0];
+        self::assertSame('https://api.telegram.org/bottoken/sendDocument', $request['url']);
+        self::assertStringStartsWith('multipart/form-data; boundary=', $request['headers']['Content-Type']);
+        self::assertStringContainsString("name=\"chat_id\"\r\n\r\n42\r\n", $request['body']);
+        self::assertStringContainsString('filename="users.xlsx"', $request['body']);
+        self::assertStringContainsString('xlsx-bytes', $request['body']);
+    }
+
     /** @return iterable<string, array{int, string, bool, ?int, bool}> */
     public static function apiFailures(): iterable
     {
