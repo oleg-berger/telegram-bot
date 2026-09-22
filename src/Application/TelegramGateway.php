@@ -13,4 +13,9 @@ interface TelegramGateway
     public function getUpdates(int $offset, int $timeout = 25): array;
 
     public function answerCallbackQuery(string $id): void;
+
+    public function sendDocument(int $chatId, string $path, string $filename): void;
+
+    /** @param list<array{command: string, description: string}> $commands */
+    public function setCommands(array $commands, array $scope = ['type' => 'default'], string $language = ''): void;
 }

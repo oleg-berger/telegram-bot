@@ -49,6 +49,36 @@ final class TelegramClient implements TelegramGateway
         $this->call('answerCallbackQuery', ['callback_query_id' => $id]);
     }
 
+    public function sendDocument(int $chatId, string $path, string $filename): void
+    {
+        $boundary = 'bot-' . bin2hex(random_bytes(16));
+        $filename = preg_replace('/[^a-zA-Z0-9_.-]/', '_', $filename);
+        $body = "--$boundary\r\nContent-Disposition: form-data; name=\"chat_id\"\r\n\r\n$chatId\r\n"
+            . "--$boundary\r\nContent-Disposition: form-data; name=\"document\"; filename=\"$filename\"\r\nContent-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet\r\n\r\n"
+            . file_get_contents($path) . "\r\n--$boundary--\r\n";
+        try {
+            $response = $this->http->post(self::API_BASE . '/bot' . $this->token . '/sendDocument', ['Content-Type' => 'multipart/form-data; boundary=' . $boundary], $body, 30);
+        } catch (HttpTransportException) {
+            throw new ApiFailure('Telegram document upload failed.', true);
+        }
+        try {
+            $decoded = json_decode($response->body, true, flags: JSON_THROW_ON_ERROR);
+        } catch (JsonException) {
+            if ($response->status >= 400) { throw $this->apiFailure($response->status); }
+            throw new ApiFailure('Telegram returned an invalid response.', true);
+        }
+        if ($response->status >= 400 || ($decoded['ok'] ?? false) !== true) {
+            $code = is_int($decoded['error_code'] ?? null) ? $decoded['error_code'] : $response->status;
+            $retry = $decoded['parameters']['retry_after'] ?? null;
+            throw $this->apiFailure($code, is_int($retry) ? $retry : null);
+        }
+    }
+
+    public function setCommands(array $commands, array $scope = ['type' => 'default'], string $language = ''): void
+    {
+        $this->call('setMyCommands', ['commands' => $commands, 'scope' => $scope, 'language_code' => $language]);
+    }
+
     /** @param array<string, mixed> $payload */
     private function call(string $method, array $payload, int $timeoutSeconds = 30): mixed
     {
