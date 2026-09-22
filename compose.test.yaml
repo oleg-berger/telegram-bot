@@ -1,0 +1,25 @@
+# Local test SMTP receiver: accepts mail without real delivery.
+# Usage: docker compose -f compose.yaml -f compose.test.yaml up -d
+# Web interface with received messages: http://127.0.0.1:8025
+services:
+  poll:
+    environment:
+      APP_ENV: test
+      SMTP_HOST: mailpit
+      SMTP_PORT: 1025
+      SMTP_ENCRYPTION: none
+      SMTP_USERNAME: ""
+      SMTP_PASSWORD: ""
+  worker:
+    environment:
+      APP_ENV: test
+      SMTP_HOST: mailpit
+      SMTP_PORT: 1025
+      SMTP_ENCRYPTION: none
+      SMTP_USERNAME: ""
+      SMTP_PASSWORD: ""
+  mailpit:
+    image: axllent/mailpit:latest
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8025:8025"
