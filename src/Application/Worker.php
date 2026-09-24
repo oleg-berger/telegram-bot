@@ -52,7 +52,9 @@ final class Worker
             if ($failure->blocked && $job['user_id'] !== null) { $this->store->disableSubscriber($job['user_id']); }
             if ($failed && in_array($job['kind'], ['translate', 'translate_subject'], true)) {
                 $broadcast = $this->store->broadcast($job['broadcast_id']);
-                $this->store->queueReply($broadcast['admin_id'], sprintf('Рассылка #%d: не удалось подготовить перевод %s. Проверьте доступ и квоту переводчика. /retry %d', $broadcast['id'], $job['language'], $broadcast['id']));
+                if ($broadcast['approved_by']) {
+                    $this->store->queueReply($broadcast['approved_by'], Messages::text('RU', 'broadcast_translation_failed', ['id' => $broadcast['id'], 'language' => $job['language']]));
+                }
             }
             if ($failed && in_array($job['kind'], ['comment', 'export'], true)) {
                 $staff = $job['payload']['staff_id'] ?? $job['user_id'];

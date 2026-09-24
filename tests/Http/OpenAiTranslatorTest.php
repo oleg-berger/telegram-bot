@@ -17,7 +17,7 @@ final class OpenAiTranslatorTest extends TestCase
     public function testTranslateUsesAuthenticatedJsonApiAndReturnsTranslatedText(): void
     {
         $http = new FakeHttpClient();
-        $http->respond(new HttpResponse(200, '{"choices":[{"message":{"role":"assistant","content":"Hallo"}}]}'));
+        $http->respond(new HttpResponse(200, '{"choices":[{"finish_reason":"stop","message":{"role":"assistant","content":"Hallo"}}]}'));
         $translator = new OpenAiTranslator('translator-secret', 'https://api.moonshot.ai/v1', 'kimi-k2-0905-preview', 0, $http);
 
         $translated = $translator->translate('Hello', 'EN-GB');
@@ -46,7 +46,7 @@ final class OpenAiTranslatorTest extends TestCase
     public function testOmittedTemperatureIsNotSent(): void
     {
         $http = new FakeHttpClient();
-        $http->respond(new HttpResponse(200, '{"choices":[{"message":{"content":"ok"}}]}'));
+        $http->respond(new HttpResponse(200, '{"choices":[{"finish_reason":"stop","message":{"content":"ok"}}]}'));
         $translator = new OpenAiTranslator('key', 'https://api.moonshot.ai/v1', 'kimi-k2.6', null, $http);
 
         $translator->translate('text', 'RU');
@@ -58,7 +58,7 @@ final class OpenAiTranslatorTest extends TestCase
     public function testLanguageCodesMapToPromptLanguages(): void
     {
         $http = new FakeHttpClient();
-        $http->respond(new HttpResponse(200, '{"choices":[{"message":{"content":"ok"}}]}'));
+        $http->respond(new HttpResponse(200, '{"choices":[{"finish_reason":"stop","message":{"content":"ok"}}]}'));
         $translator = new OpenAiTranslator('key', 'https://api.deepseek.com', 'deepseek-chat', null, $http);
 
         $translator->translate('text', 'ES');
@@ -73,6 +73,33 @@ final class OpenAiTranslatorTest extends TestCase
 
         $this->expectExceptionObject(new ApiFailure('Unsupported target language.'));
         $translator->translate('text', 'PT-BR');
+    }
+
+    public static function incompleteResponses(): iterable
+    {
+        foreach (['length', 'content_filter', 'tool_calls', 'function_call', 'private-unknown-reason', '', null, 1, ['stop']] as $reason) {
+            yield json_encode($reason) => [['finish_reason' => $reason]];
+        }
+        yield 'missing finish reason' => [[]];
+    }
+
+    #[DataProvider('incompleteResponses')]
+    public function testIncompleteResponseIsRejectedWithoutLeakingContent(array $choice): void
+    {
+        $choice['message'] = ['content' => 'private truncated translation'];
+        $http = new FakeHttpClient();
+        $http->respond(new HttpResponse(200, json_encode(['choices' => [$choice]], JSON_THROW_ON_ERROR)));
+        $translator = new OpenAiTranslator('translator-secret', 'https://example.com/v1', 'model', http: $http);
+
+        try {
+            $translator->translate('private original', 'RU');
+            self::fail('An unfinished response must not be accepted.');
+        } catch (ApiFailure $failure) {
+            self::assertTrue($failure->transient);
+            self::assertFalse($failure->blocked);
+            self::assertNull($failure->retryAfter);
+            self::assertSame('Translator did not complete the translation.', $failure->getMessage());
+        }
     }
 
     /** @return iterable<string, array{string}> */

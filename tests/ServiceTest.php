@@ -10,6 +10,7 @@ use Broadcast\Application\TelegramGateway;
 use Broadcast\Application\Translator;
 use Broadcast\Domain\ApiFailure;
 use Broadcast\Infrastructure\SqliteStore;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class ServiceTest extends TestCase
@@ -249,10 +250,66 @@ final class ServiceTest extends TestCase
         [$telegram] = $this->drain(null, $translator);
         self::assertNotContains([1, 'RU:News'], $telegram->messages);
         self::assertSame('failed', $this->store->broadcast(1)['status']);
+        $this->bot = new Kernel($this->store, [98, 99], [100]);
+        $this->say(98, '/retry 1');
+        [$denied] = $this->drain();
+        self::assertSame('failed', $this->store->broadcast(1)['status']);
+        self::assertSame([[98, 'Рассылка недоступна или ещё не одобрена.']], $denied->messages);
         $this->say(99, '/retry 1');
         [$telegram, , $mailer] = $this->drain();
         self::assertContains([1, 'RU:News'], $telegram->messages);
         self::assertContains(['user1@example.com', 'RU:Subject', 'RU:News'], $mailer->mails);
+        self::assertSame([[99, 'Неуспешные задания поставлены на повтор.']], array_values(array_filter($telegram->messages, fn ($m) => $m[0] === 99)));
+        self::assertContains([100, "Рассылка #1:\nTelegram: отправлено 1, пропущено 0, ошибки 0.\nEmail (принято SMTP): отправлено 1, пропущено 0, ошибки 0."], $telegram->messages);
+    }
+
+    public static function broadcastReportScenarios(): iterable
+    {
+        foreach ([99, 100, 101] as $author) {
+            foreach ([null, 'News', 'Subject'] as $failedText) {
+                yield $author . ':' . ($failedText ?? 'success') => [$author, $failedText];
+            }
+        }
+    }
+
+    #[DataProvider('broadcastReportScenarios')]
+    public function testReportsAndTranslationFailuresGoOnlyToApprovingSuperadmin(int $author, ?string $failedText): void
+    {
+        $this->bot = new Kernel($this->store, [99], [100, 101]);
+        $this->register(1);
+        $this->approve(1);
+        $this->say($author, 'News');
+        $this->say($author, 'Subject');
+        $this->click($author, 'draft:submit:1:' . $this->store->draft(1)['version']);
+        $this->drain();
+
+        $version = $this->store->draft(1)['version'];
+        $this->click(100, 'draft:approve:1:' . $version);
+        $translator = new FakeTranslator();
+        if ($failedText !== null) {
+            $translator->failure = new ApiFailure('private upstream failure');
+            $translator->failureText = $failedText;
+        }
+        [$telegram, , $mailer] = $this->drain(null, $translator);
+        $done = $failedText === null ? 1 : 0;
+        $failed = 1 - $done;
+        $report = "Рассылка #1:\nTelegram: отправлено $done, пропущено 0, ошибки $failed.\nEmail (принято SMTP): отправлено $done, пропущено 0, ошибки $failed.";
+        $reports = array_values(array_filter($telegram->messages, fn ($m) => str_contains($m[1], 'Telegram:')));
+        self::assertSame([[100, $report]], $reports);
+        $failures = array_values(array_filter($telegram->messages, fn ($m) => str_contains($m[1], 'не удалось подготовить перевод')));
+        self::assertSame($failedText === null ? [] : [[100, 'Рассылка #1: не удалось подготовить перевод RU. Проверьте доступ и квоту переводчика. /retry 1']], $failures);
+        $approval = '✅ Рассылка #1 одобрена. Получателей: 1. Готовим переводы.';
+        self::assertCount(1, array_filter($telegram->messages, fn ($m) => $m === [100, $approval]));
+        if ($author !== 100) {
+            self::assertSame([[$author, $author === 99 ? '✅ Рассылка #1 одобрена.' : $approval]], array_values(array_filter($telegram->messages, fn ($m) => $m[0] === $author)));
+        }
+        self::assertSame([], array_values(array_filter($telegram->messages, fn ($m) => $m[0] === ($author === 101 ? 99 : 101))));
+        self::assertCount($done, $mailer->mails);
+        self::assertSame($done === 1 ? [[1, 'RU:News']] : [], array_values(array_filter($telegram->messages, fn ($m) => $m[0] === 1)));
+
+        $this->click(100, 'draft:approve:1:' . $version);
+        [$later] = $this->drain();
+        self::assertSame([], array_values(array_filter($later->messages, fn ($m) => str_contains($m[1], 'Telegram:') || str_contains($m[1], 'одобрена.'))));
     }
 
     public function testEmailFailureDoesNotCancelTelegramDeliveryAndCanRetry(): void
@@ -266,6 +323,8 @@ final class ServiceTest extends TestCase
         [$telegram] = $this->drain(null, null, $mailer);
         self::assertContains([1, 'RU:News'], $telegram->messages);
         self::assertCount(0, $mailer->mails);
+        self::assertContains([100, "Рассылка #1:\nTelegram: отправлено 1, пропущено 0, ошибки 0.\nEmail (принято SMTP): отправлено 0, пропущено 0, ошибки 1."], $telegram->messages);
+        self::assertSame([], array_values(array_filter($telegram->messages, fn ($m) => $m[0] === 99 && str_contains($m[1], 'Telegram:'))));
         $this->say(99, '/retry 1');
         [, , $mailer] = $this->drain();
         self::assertContains(['user1@example.com', 'RU:Subject', 'RU:News'], $mailer->mails);
@@ -476,10 +535,11 @@ final class FakeTranslator implements Translator
 {
     public array $languages = [];
     public ?ApiFailure $failure = null;
+    public ?string $failureText = null;
     public function translate(string $text, string $targetLanguage): string
     {
         $this->languages[] = $targetLanguage;
-        if ($this->failure) { throw $this->failure; }
+        if ($this->failure && ($this->failureText === null || $this->failureText === $text)) { throw $this->failure; }
         return $targetLanguage . ':' . $text;
     }
 }

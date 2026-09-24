@@ -1,4 +1,40 @@
 {
+  "broadcast_approved_author": [
+    "✅ Рассылка #{id} одобрена.",
+    "✅ Broadcast #{id} approved.",
+    "✅ Difusión #{id} aprobada.",
+    "✅ Diffusion nº {id} approuvée."
+  ],
+  "broadcast_approved_staff": [
+    "✅ Рассылка #{id} одобрена. Получателей: {recipients}. Готовим переводы.",
+    "✅ Broadcast #{id} approved. Recipients: {recipients}. Preparing translations.",
+    "✅ Difusión #{id} aprobada. Destinatarios: {recipients}. Preparando traducciones.",
+    "✅ Diffusion nº {id} approuvée. Destinataires : {recipients}. Préparation des traductions."
+  ],
+  "broadcast_translation_failed": [
+    "Рассылка #{id}: не удалось подготовить перевод {language}. Проверьте доступ и квоту переводчика. /retry {id}",
+    "Broadcast #{id}: could not prepare the {language} translation. Check translator access and quota. /retry {id}",
+    "Difusión #{id}: no se pudo preparar la traducción a {language}. Revise el acceso y la cuota del traductor. /retry {id}",
+    "Diffusion nº {id} : impossible de préparer la traduction en {language}. Vérifiez l’accès et le quota du traducteur. /retry {id}"
+  ],
+  "broadcast_report": [
+    "Рассылка #{id}:",
+    "Broadcast #{id}:",
+    "Difusión #{id}:",
+    "Diffusion nº {id} :"
+  ],
+  "broadcast_report_telegram": [
+    "Telegram: отправлено {done}, пропущено {skipped}, ошибки {failed}.",
+    "Telegram: sent {done}, skipped {skipped}, errors {failed}.",
+    "Telegram: enviados {done}, omitidos {skipped}, errores {failed}.",
+    "Telegram : envoyés {done}, ignorés {skipped}, erreurs {failed}."
+  ],
+  "broadcast_report_email": [
+    "Email (принято SMTP): отправлено {done}, пропущено {skipped}, ошибки {failed}.",
+    "Email (accepted by SMTP): sent {done}, skipped {skipped}, errors {failed}.",
+    "Email (aceptado por SMTP): enviados {done}, omitidos {skipped}, errores {failed}.",
+    "Email (accepté par SMTP) : envoyés {done}, ignorés {skipped}, erreurs {failed}."
+  ],
   "draft_author": [
     "Автор: {author}",
     "Author: {author}",

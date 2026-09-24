@@ -85,6 +85,10 @@ final class OpenAiTranslator implements Translator
         if (!is_string($translation)) {
             throw new ApiFailure('Translator returned an invalid response.', true);
         }
+        // Non-empty content can still be truncated or interrupted by the provider.
+        if (($decoded['choices'][0]['finish_reason'] ?? null) !== 'stop') {
+            throw new ApiFailure('Translator did not complete the translation.', true);
+        }
 
         return $translation;
     }

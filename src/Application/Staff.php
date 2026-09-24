@@ -164,7 +164,7 @@ final class Staff
             $broadcast = $this->store->approveDraft($draft['id'], $draft['version'], $id);
             if ($broadcast) {
                 foreach (array_unique([$id, $draft['admin_id']]) as $staff) {
-                    $this->reply($staff, '✅ Рассылка #' . $broadcast['id'] . ' одобрена. Получателей: ' . $broadcast['recipients'] . '. Готовим переводы.');
+                    $this->reply($staff, Messages::text('RU', $this->super($staff) ? 'broadcast_approved_staff' : 'broadcast_approved_author', $broadcast));
                 }
             }
             return;

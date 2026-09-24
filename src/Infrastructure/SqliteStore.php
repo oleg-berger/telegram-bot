@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Broadcast\Infrastructure;
 
 use Broadcast\Application\Store;
+use Broadcast\Application\Messages;
 use PDO;
 use Throwable;
 
@@ -281,16 +282,15 @@ final class SqliteStore implements Store
             $this->db->exec("UPDATE broadcasts SET status='ready' WHERE status='preparing' AND NOT EXISTS (SELECT 1 FROM jobs WHERE broadcast_id=broadcasts.id AND kind IN ('translate','translate_subject') AND initial=1 AND status!='done')");
             $finished = $this->run("SELECT * FROM broadcasts b WHERE reported=0 AND status IN ('ready','failed') AND NOT EXISTS (SELECT 1 FROM jobs WHERE broadcast_id=b.id AND report_included=1 AND status='pending')")->fetchAll();
             foreach ($finished as $broadcast) {
-                $report = 'Рассылка #' . $broadcast['id'] . ':';
-                foreach (['telegram' => 'Telegram', 'email' => 'Email (принято SMTP)'] as $channel => $label) {
+                $report = Messages::text('RU', 'broadcast_report', ['id' => $broadcast['id']]);
+                foreach (['telegram', 'email'] as $channel) {
                     $counts = ['done' => 0, 'skipped' => 0, 'failed' => 0];
                     foreach ($this->run("SELECT status,COUNT(*) AS total FROM jobs WHERE broadcast_id=? AND kind='delivery' AND report_included=1 AND channel=? GROUP BY status", [$broadcast['id'], $channel])->fetchAll() as $row) {
                         $counts[$row['status']] = (int) $row['total'];
                     }
-                    $report .= sprintf("\n%s: отправлено %d, пропущено %d, ошибки %d.", $label, $counts['done'], $counts['skipped'], $counts['failed']);
+                    $report .= "\n" . Messages::text('RU', 'broadcast_report_' . $channel, $counts);
                 }
-                $this->queueReply($broadcast['admin_id'], $report);
-                if ($broadcast['approved_by'] && $broadcast['approved_by'] !== $broadcast['admin_id']) {
+                if ($broadcast['approved_by']) {
                     $this->queueReply($broadcast['approved_by'], $report);
                 }
                 $this->run('UPDATE broadcasts SET reported=1 WHERE id=?', [$broadcast['id']]);
