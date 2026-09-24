@@ -1,4 +1,10 @@
 {
+  "draft_author": [
+    "Автор: {author}",
+    "Author: {author}",
+    "Autor: {author}",
+    "Auteur : {author}"
+  ],
   "intro": [
     "👋 Добро пожаловать! Спасибо, что присоединились к нам.",
     "👋 Welcome! Thank you for joining us.",

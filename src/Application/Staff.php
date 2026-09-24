@@ -126,7 +126,7 @@ final class Staff
         $this->reply($id, $help);
     }
 
-    public function callback(int $id, string $data): void
+    public function callback(int $id, string $data, array $from = []): void
     {
         if (preg_match('/^app:(approve|changes|reject|reopen):([1-9][0-9]*):([0-9]+)$/D', $data, $match)) {
             if (!$this->approveUsers($id)) { $this->reply($id, 'Недостаточно прав.'); return; }
@@ -177,7 +177,8 @@ final class Staff
             if (trim($draft['subject']) === '') { $this->reply($id, 'Сначала укажите тему письма.'); return; }
             $this->store->saveDraft($draft['id'], $draft['version'], ['status' => 'pending']);
             $this->store->saveSession($id, null);
-            foreach ($this->superadmins as $super) { $this->preview($super, $this->store->draft($draft['id'])); }
+            $author = $this->authorLabel($id, $from);
+            foreach ($this->superadmins as $super) { $this->preview($super, $this->store->draft($draft['id']), $author); }
             $this->reply($id, '📨 Объявление отправлено на согласование.');
         } elseif ($action === 'cancel') {
             $this->store->saveDraft($draft['id'], $draft['version'], ['status' => 'cancelled']);
@@ -200,7 +201,17 @@ final class Staff
         $this->reply($id, 'Решение сохранено. Комментарий поставлен на перевод и доставку.');
     }
 
-    private function preview(int $id, array $draft): void
+    private function authorLabel(int $id, array $from): string
+    {
+        $username = trim($from['username'] ?? '');
+        if ($username !== '') {
+            return '@' . $username;
+        }
+        $name = trim(($from['first_name'] ?? '') . ' ' . ($from['last_name'] ?? ''));
+        return $name !== '' ? $name : (string) $id;
+    }
+
+    private function preview(int $id, array $draft, ?string $author = null): void
     {
         $rows = [];
         $suffix = $draft['id'] . ':' . $draft['version'];
@@ -212,7 +223,8 @@ final class Staff
             $actions = [];
         }
         foreach ($actions as $action => $label) { $rows[] = [['text' => $label, 'callback_data' => 'draft:' . $action . ':' . $suffix]]; }
-        $this->reply($id, 'Объявление #' . $draft['id'] . ' · ' . $draft['status'] . "\nТема: " . $draft['subject'] . "\n\n" . $draft['text'], $rows);
+        $signature = $this->super($id) ? "\n" . Messages::text('RU', 'draft_author', ['author' => $author ?? (string) $draft['admin_id']]) : '';
+        $this->reply($id, 'Объявление #' . $draft['id'] . ' · ' . $draft['status'] . $signature . "\nТема: " . $draft['subject'] . "\n\n" . $draft['text'], $rows);
     }
 
     private function stale(int $id): void

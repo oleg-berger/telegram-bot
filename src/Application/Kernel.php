@@ -31,7 +31,11 @@ final class Kernel
             $flow = in_array($id, $this->staffIds, true) ? $this->staff : $this->registration;
             if ($callback) {
                 $this->store->queueCallback((string) $callback['id']);
-                $flow->callback($id, (string) ($callback['data'] ?? ''));
+                if ($flow === $this->staff) {
+                    $this->staff->callback($id, (string) ($callback['data'] ?? ''), $callback['from'] ?? []);
+                } else {
+                    $flow->callback($id, (string) ($callback['data'] ?? ''));
+                }
             } else {
                 $flow->message($id, $message);
             }
