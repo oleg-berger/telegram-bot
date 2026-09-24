@@ -24,6 +24,7 @@ final readonly class Config
         public bool $adminsCanExportUsers,
         public array $smtp,
         public int $mailSendIntervalSeconds,
+        public bool $testMode,
     ) {}
 
     /** @param array<string, mixed> $environment */
@@ -86,6 +87,7 @@ final readonly class Config
             self::flag($environment, 'ADMINS_CAN_EXPORT_USERS'),
             $smtp,
             self::integer($environment, 'MAIL_SEND_INTERVAL_SECONDS', 1, 86400, 2),
+            $test,
         );
     }
 

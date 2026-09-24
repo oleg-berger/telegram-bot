@@ -1,4 +1,34 @@
 {
+  "test_reset_unavailable": [
+    "Сброс анкеты доступен только суперадминистратору в тестовом режиме.",
+    "Registration reset is available only to a superadmin in test mode.",
+    "Solo un superadministrador puede restablecer el registro en modo de prueba.",
+    "La réinitialisation est réservée au superadministrateur en mode test."
+  ],
+  "test_reset_help": [
+    "/resetuser ID — сбросить тестовую анкету для регистрации с нуля",
+    "/resetuser ID — reset a test registration to start again",
+    "/resetuser ID — restablecer el registro de prueba desde cero",
+    "/resetuser ID — recommencer une inscription de test à zéro"
+  ],
+  "test_reset_not_found": [
+    "Пользователь не найден.",
+    "User not found.",
+    "Usuario no encontrado.",
+    "Utilisateur introuvable."
+  ],
+  "test_reset_done": [
+    "Тестовая анкета пользователя #{id} сброшена. Для новой регистрации нужно заполнить все поля заново.",
+    "Test registration for user #{id} has been reset. All fields must be completed again.",
+    "Se ha restablecido el registro de prueba del usuario #{id}. Debe completar todos los campos de nuevo.",
+    "L’inscription de test de l’utilisateur nº {id} a été réinitialisée. Tous les champs doivent être remplis à nouveau."
+  ],
+  "test_reset_user": [
+    "Ваша тестовая анкета сброшена. Нажмите /start, выберите язык и заполните все поля заново. После отправки потребуется новое одобрение.",
+    "Your test registration has been reset. Press /start, choose a language and complete all fields again. A new approval will be required.",
+    "Se ha restablecido su registro de prueba. Pulse /start, elija un idioma y complete todos los campos de nuevo. Se necesitará una nueva aprobación.",
+    "Votre inscription de test a été réinitialisée. Appuyez sur /start, choisissez une langue et remplissez tous les champs à nouveau. Une nouvelle approbation sera nécessaire."
+  ],
   "broadcast_approved_author": [
     "✅ Рассылка #{id} одобрена.",
     "✅ Broadcast #{id} approved.",

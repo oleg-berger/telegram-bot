@@ -66,6 +66,7 @@ final class ConfigTest extends TestCase
         self::assertSame('', $config->smtp['replyTo']);
         self::assertSame(2, $config->mailSendIntervalSeconds);
         self::assertFalse($config->smtp['test']);
+        self::assertFalse($config->testMode);
         self::assertNull($config->translatorTemperature);
     }
 
@@ -78,6 +79,7 @@ final class ConfigTest extends TestCase
         ]);
 
         self::assertTrue($config->smtp['test']);
+        self::assertTrue($config->testMode);
         self::assertSame('none', $config->smtp['encryption']);
         self::assertSame('', $config->smtp['username']);
         self::assertSame('', $config->smtp['password']);

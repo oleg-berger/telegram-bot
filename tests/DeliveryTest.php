@@ -65,6 +65,57 @@ final class DeliveryTest extends TestCase
         self::assertLessThan(200, $i);
     }
 
+    private function reports(): array
+    {
+        return array_values(array_filter($this->sent, static fn ($message) => str_contains($message[1], 'Telegram:')));
+    }
+
+    public function testCatchupReopensReportOnlyForNewDeliveriesAndWaitsForBothChannels(): void
+    {
+        $this->user(1);
+        $id = $this->broadcast();
+        $this->drain();
+        self::assertSame([[100, "Рассылка #$id:\nTelegram: отправлено 1, пропущено 0, ошибки 0.\nEmail (принято SMTP): отправлено 1, пропущено 0, ошибки 0."]], $this->reports());
+
+        $this->user(2, 'FR');
+        self::assertTrue($this->store->transaction(fn () => $this->store->addCatchup(2, 'FR')));
+        self::assertSame(0, $this->store->broadcast($id)['reported']);
+        for ($i = 0; $i < 10 && !in_array([2, 'FR:News'], $this->sent, true); ++$i) {
+            self::assertTrue($this->worker->tick($this->now += 60));
+        }
+        self::assertLessThan(10, $i);
+        self::assertCount(1, $this->mail);
+        self::assertSame(0, $this->store->broadcast($id)['reported']);
+        self::assertCount(1, $this->reports());
+        self::assertTrue($this->store->transaction(fn () => $this->store->addCatchup(2, 'FR')));
+        $this->drain();
+        self::assertSame([100, "Рассылка #$id:\nTelegram: отправлено 2, пропущено 0, ошибки 0.\nEmail (принято SMTP): отправлено 2, пропущено 0, ошибки 0."], $this->reports()[1]);
+        self::assertCount(2, $this->reports());
+        self::assertSame(1, $this->store->broadcast($id)['reported']);
+
+        foreach (['FR', 'ES'] as $language) {
+            self::assertTrue($this->store->transaction(fn () => $this->store->addCatchup(2, $language)));
+            self::assertSame(1, $this->store->broadcast($id)['reported']);
+            $this->drain();
+        }
+        self::assertCount(2, $this->reports());
+        self::assertCount(2, $this->mail);
+        self::assertCount(1, array_filter($this->sent, fn ($message) => $message === [2, 'FR:News']));
+    }
+
+    public function testCatchupBeforeInitialReportProducesOneCombinedReport(): void
+    {
+        $this->user(1);
+        $id = $this->broadcast();
+        self::assertTrue($this->worker->tick($this->now));
+        self::assertTrue($this->worker->tick($this->now));
+        self::assertSame('ready', $this->store->broadcast($id)['status']);
+        $this->user(2);
+        self::assertTrue($this->store->transaction(fn () => $this->store->addCatchup(2, 'RU')));
+        $this->drain();
+        self::assertSame([[100, "Рассылка #$id:\nTelegram: отправлено 2, пропущено 0, ошибки 0.\nEmail (принято SMTP): отправлено 2, пропущено 0, ошибки 0."]], $this->reports());
+    }
+
     public function testChannelsAreIndependentAndTranslationsAreReused(): void
     {
         $this->user(1);
@@ -117,6 +168,8 @@ final class DeliveryTest extends TestCase
         self::assertTrue($this->store->addCatchup(1, 'FR'));
         $this->failMail = true;
         $this->drain();
+        self::assertCount(2, $this->reports());
+        self::assertSame([100, "Рассылка #$id:\nTelegram: отправлено 1, пропущено 0, ошибки 0.\nEmail (принято SMTP): отправлено 0, пропущено 0, ошибки 1."], $this->reports()[1]);
         self::assertTrue($this->store->retryBroadcast($id));
         $this->store->refreshBroadcasts();
         self::assertSame(0, $this->store->broadcast($id)['reported']);
@@ -124,6 +177,8 @@ final class DeliveryTest extends TestCase
         $this->drain();
         $this->store->addCatchup(1, 'FR');
         $this->drain();
+        self::assertCount(3, $this->reports());
+        self::assertSame([100, "Рассылка #$id:\nTelegram: отправлено 1, пропущено 0, ошибки 0.\nEmail (принято SMTP): отправлено 1, пропущено 0, ошибки 0."], $this->reports()[2]);
         self::assertCount(1, $this->mail);
         self::assertCount(1, array_filter($this->sent, fn ($v) => $v === [1, 'FR:News']));
     }

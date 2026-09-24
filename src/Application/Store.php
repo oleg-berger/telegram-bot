@@ -20,6 +20,7 @@ interface Store
     public function applications(?int $id = null): array;
     public function decideApplication(int $id, int $revision, string $status, int $actor): bool;
     public function unsubscribeUser(int $id): bool;
+    public function resetTestUser(int $id): bool;
     public function session(int $actor): ?array;
     public function saveSession(int $actor, ?array $session): void;
     public function createDraft(int $admin, string $text): array;

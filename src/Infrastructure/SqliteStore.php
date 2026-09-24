@@ -102,8 +102,11 @@ final class SqliteStore implements Store
         if ($broadcast === null) { return false; }
         $this->job('translate', $broadcast['id'], null, $language);
         $this->job('translate_subject', $broadcast['id'], null, $language);
-        $this->job('delivery', $broadcast['id'], $userId, $language);
-        $this->job('delivery', $broadcast['id'], $userId, $language, ['email' => $this->user($userId)['email']], false, 'email');
+        $telegramAdded = $this->job('delivery', $broadcast['id'], $userId, $language);
+        $emailAdded = $this->job('delivery', $broadcast['id'], $userId, $language, ['email' => $this->user($userId)['email']], false, 'email');
+        if ($telegramAdded || $emailAdded) {
+            $this->run('UPDATE broadcasts SET reported=0 WHERE id=?', [$broadcast['id']]);
+        }
         return true;
     }
 
@@ -140,6 +143,19 @@ final class SqliteStore implements Store
     {
         // Unsubscribing stops both channels: Telegram checks subscribed, mail and audience snapshots check the status.
         return $this->run("UPDATE users SET subscribed=0,status='unsubscribed',revision=revision+1 WHERE id=? AND status='approved'", [$id])->rowCount() === 1;
+    }
+
+    public function resetTestUser(int $id): bool
+    {
+        // Keep the revision monotonic so old approval buttons cannot approve a new application.
+        $changed = $this->run("UPDATE users SET language='RU',step='language',name='',company='',country='',phone='',email='',subscribed=0,completed=0,choosing_language=1,status='draft',submitted_at=NULL,approved_at=NULL,revision=revision+1,edit_field='' WHERE id=?", [$id])->rowCount();
+        if ($changed === 0) {
+            return false;
+        }
+        $this->run('DELETE FROM contacts WHERE user_id=?', [$id]);
+        $this->run("UPDATE broadcasts SET reported=0 WHERE id IN (SELECT broadcast_id FROM jobs WHERE user_id=? AND kind='delivery' AND status IN ('pending','failed'))", [$id]);
+        $this->run("UPDATE jobs SET status='skipped',payload='{}',error=NULL WHERE user_id=? AND status IN ('pending','failed')", [$id]);
+        return true;
     }
 
     public function session(int $actor): ?array
@@ -298,10 +314,10 @@ final class SqliteStore implements Store
         });
     }
 
-    private function job(string $kind, ?int $broadcastId, ?int $userId, ?string $language, array $payload = [], bool $initial = false, string $channel = 'telegram'): void
+    private function job(string $kind, ?int $broadcastId, ?int $userId, ?string $language, array $payload = [], bool $initial = false, string $channel = 'telegram'): bool
     {
         // Every delivery waits in the report, including catch-up sends; auxiliary jobs follow the initial snapshot.
-        $this->run('INSERT OR IGNORE INTO jobs(kind,broadcast_id,user_id,language,payload,initial,report_included,channel) VALUES (?,?,?,?,?,?,?,?)', [$kind, $broadcastId, $userId, $language, json_encode($payload, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE), (int) $initial, (int) ($initial || $kind === 'delivery'), $channel]);
+        return $this->run('INSERT OR IGNORE INTO jobs(kind,broadcast_id,user_id,language,payload,initial,report_included,channel) VALUES (?,?,?,?,?,?,?,?)', [$kind, $broadcastId, $userId, $language, json_encode($payload, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE), (int) $initial, (int) ($initial || $kind === 'delivery'), $channel])->rowCount() === 1;
     }
 
     private function run(string $sql, array $values = []): \PDOStatement

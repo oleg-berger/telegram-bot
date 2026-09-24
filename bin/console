@@ -81,7 +81,7 @@ try {
     $locks[] = ProcessLock::acquire($runtimeDirectory, $command);
     $store = new SqliteStore($path);
     $store->migrate();
-    $poller = new Poller($store, $telegram, new Kernel($store, $config->adminIds, $config->superadminIds, $config->adminsCanApproveUsers, $config->adminsCanExportUsers));
+    $poller = new Poller($store, $telegram, new Kernel($store, $config->adminIds, $config->superadminIds, $config->adminsCanApproveUsers, $config->adminsCanExportUsers, $config->testMode));
     $worker = new Worker($store, $telegram, new OpenAiTranslator($config->translatorApiKey, $config->translatorApiUrl, $config->translatorModel, $config->translatorTemperature),
         static function (array $event) use ($log): void {
             $name = $event['event'];
