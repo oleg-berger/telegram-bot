@@ -14,8 +14,6 @@ final readonly class Config
         public array $adminIds,
         public string $translatorApiKey,
         public string $translatorApiUrl,
-        public string $translatorModel,
-        public ?float $translatorTemperature,
         public string $databasePath,
         public string $backupDirectory,
         public string $runtimeDirectory,
@@ -34,17 +32,12 @@ final readonly class Config
         $adminIds = self::ids(self::required($environment, 'TELEGRAM_ADMIN_IDS'));
         $apiKey = self::required($environment, 'TRANSLATOR_API_KEY');
         $apiUrl = self::required($environment, 'TRANSLATOR_API_URL');
-        $model = self::required($environment, 'TRANSLATOR_MODEL');
         $databasePath = self::required($environment, 'DATABASE_PATH');
         $superadminIds = self::ids(self::required($environment, 'TELEGRAM_SUPERADMIN_IDS'));
-        $urlParts = parse_url($apiUrl);
-        if (!is_array($urlParts) || ($urlParts['scheme'] ?? null) !== 'https' || empty($urlParts['host']) || isset($urlParts['user']) || isset($urlParts['pass'])) {
+        try {
+            new \Broadcast\Infrastructure\Http\DeepLTranslator($apiKey, $apiUrl);
+        } catch (InvalidArgumentException) {
             throw new InvalidArgumentException(self::ERROR);
-        }
-        $temperature = null;
-        if (array_key_exists('TRANSLATOR_TEMPERATURE', $environment)) {
-            $temperature = filter_var($environment['TRANSLATOR_TEMPERATURE'], FILTER_VALIDATE_FLOAT, ['options' => ['min_range' => 0, 'max_range' => 2]]);
-            if ($temperature === false) { throw new InvalidArgumentException(self::ERROR); }
         }
 
         $appEnv = $environment['APP_ENV'] ?? 'production';
@@ -77,8 +70,6 @@ final readonly class Config
             $adminIds,
             $apiKey,
             $apiUrl,
-            $model,
-            $temperature,
             $databasePath,
             $dataDirectory . DIRECTORY_SEPARATOR . 'backups',
             $dataDirectory . DIRECTORY_SEPARATOR . 'runtime',
@@ -94,7 +85,7 @@ final readonly class Config
     public static function fromEnvironment(): self
     {
         $environment = [];
-        foreach (['TELEGRAM_BOT_TOKEN', 'TELEGRAM_ADMIN_IDS', 'TELEGRAM_SUPERADMIN_IDS', 'ADMINS_CAN_APPROVE_USERS', 'ADMINS_CAN_EXPORT_USERS', 'TRANSLATOR_API_KEY', 'TRANSLATOR_API_URL', 'TRANSLATOR_MODEL', 'TRANSLATOR_TEMPERATURE', 'DATABASE_PATH', 'APP_ENV', 'SMTP_HOST', 'SMTP_PORT', 'SMTP_ENCRYPTION', 'SMTP_USERNAME', 'SMTP_PASSWORD', 'MAIL_FROM_ADDRESS', 'MAIL_FROM_NAME', 'MAIL_REPLY_TO', 'MAIL_SEND_INTERVAL_SECONDS'] as $key) {
+        foreach (['TELEGRAM_BOT_TOKEN', 'TELEGRAM_ADMIN_IDS', 'TELEGRAM_SUPERADMIN_IDS', 'ADMINS_CAN_APPROVE_USERS', 'ADMINS_CAN_EXPORT_USERS', 'TRANSLATOR_API_KEY', 'TRANSLATOR_API_URL', 'DATABASE_PATH', 'APP_ENV', 'SMTP_HOST', 'SMTP_PORT', 'SMTP_ENCRYPTION', 'SMTP_USERNAME', 'SMTP_PASSWORD', 'MAIL_FROM_ADDRESS', 'MAIL_FROM_NAME', 'MAIL_REPLY_TO', 'MAIL_SEND_INTERVAL_SECONDS'] as $key) {
             $value = getenv($key);
             if ($value !== false) {
                 $environment[$key] = $value;

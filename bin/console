@@ -6,7 +6,7 @@ use Broadcast\Application\Kernel;
 use Broadcast\Application\Worker;
 use Broadcast\Domain\ApiFailure;
 use Broadcast\Infrastructure\Export\XlsxUsers;
-use Broadcast\Infrastructure\Http\OpenAiTranslator;
+use Broadcast\Infrastructure\Http\DeepLTranslator;
 use Broadcast\Infrastructure\Http\TelegramClient;
 use Broadcast\Infrastructure\Mail\SmtpMailer;
 use Broadcast\Infrastructure\Runtime\CommandMenu;
@@ -82,7 +82,7 @@ try {
     $store = new SqliteStore($path);
     $store->migrate();
     $poller = new Poller($store, $telegram, new Kernel($store, $config->adminIds, $config->superadminIds, $config->adminsCanApproveUsers, $config->adminsCanExportUsers, $config->testMode));
-    $worker = new Worker($store, $telegram, new OpenAiTranslator($config->translatorApiKey, $config->translatorApiUrl, $config->translatorModel, $config->translatorTemperature),
+    $worker = new Worker($store, $telegram, new DeepLTranslator($config->translatorApiKey, $config->translatorApiUrl),
         static function (array $event) use ($log): void {
             $name = $event['event'];
             unset($event['event']);

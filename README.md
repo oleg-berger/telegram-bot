@@ -1,6 +1,8 @@
 # Telegram-бот для многоязычных рассылок
 
-Небольшой сервис на PHP 8.4 и SQLite. Пользователи проходят регистрацию с одобрением; администратор готовит объявление и передаёт его суперадминистратору; после одобрения бот переводит его через OpenAI-совместимый API (DeepSeek, Moonshot Kimi и т.п.) и рассылает одобренным пользователям в Telegram и на электронную почту. Все действия выполняются в личном чате Telegram.
+Ветка `deepl-translate` основана на актуальной версии бота из `main`. Для запуска укажите в `.env` ключ DeepL в `TRANSLATOR_API_KEY` и адрес Free/Pro в `TRANSLATOR_API_URL` (см. `.env.example`). `TRANSLATOR_MODEL` и `TRANSLATOR_TEMPERATURE` не используются. Сохранённые переводы в SQLite повторно не переводятся; новые задания используют DeepL. Не запускайте обе версии одновременно с одним токеном Telegram; для независимого тестирования используйте отдельный токен и отдельную базу.
+
+Небольшой сервис на PHP 8.4 и SQLite. Пользователи проходят регистрацию с одобрением; администратор готовит объявление и передаёт его суперадминистратору; после одобрения бот переводит его через DeepL API и рассылает одобренным пользователям в Telegram и на электронную почту. Все действия выполняются в личном чате Telegram.
 
 ## Возможности
 
@@ -54,9 +56,8 @@
 | `TELEGRAM_SUPERADMIN_IDS` | То же для суперадминистраторов. При совпадении с admin-ролью действует суперадминистратор. |
 | `ADMINS_CAN_APPROVE_USERS` | `true` разрешает администраторам рассмотрение заявок. По умолчанию `false`. |
 | `ADMINS_CAN_EXPORT_USERS` | `true` разрешает администраторам выгрузку Excel. По умолчанию `false`. |
-| `TRANSLATOR_API_KEY` | Ключ OpenAI-совместимого API перевода (DeepSeek, Moonshot Kimi, OpenRouter и т.п.). |
-| `TRANSLATOR_API_URL` | HTTPS-адрес API, например `https://api.deepseek.com` или `https://api.moonshot.ai/v1`. Ключ отправляется на этот адрес — указывайте только доверенные. |
-| `TRANSLATOR_MODEL` | Имя модели у выбранного провайдера, например `deepseek-chat` или `kimi-k2-0905-preview`. |
+| `TRANSLATOR_API_KEY` | Ключ DeepL API Free или Pro. |
+| `TRANSLATOR_API_URL` | `https://api-free.deepl.com` для Free или `https://api.deepl.com` для Pro; без `/v2/translate`. |
 | `DATABASE_PATH` | Локально `./var/broadcast.sqlite`. В Compose всегда `/data/broadcast.sqlite`. |
 | `APP_ENV` | `production` или `test`. В `test` допускается `SMTP_ENCRYPTION=none` и пустые почтовые доступы — только для локального приёмника. |
 | `SMTP_HOST`, `SMTP_PORT` | Адрес и порт SMTP-сервера, обычно `587`. |
@@ -191,4 +192,4 @@ docker compose up -d
 
 В этой поставке выполнены локальные автоматические проверки на PHP 8.5 и проверка консольного цикла с отдельной пустой базой. Docker-сборка, реальные Telegram/API перевода/SMTP-вызовы и развёртывание требуют окружения и ключей; они здесь не выполнялись.
 
-Документация API: [Telegram Bot API](https://core.telegram.org/bots/api), [OpenAI Chat Completions](https://platform.openai.com/docs/api-reference/chat) (совместимый формат используется DeepSeek, Moonshot Kimi, OpenRouter и другими).
+Документация API: [Telegram Bot API](https://core.telegram.org/bots/api), [DeepL Translate API](https://developers.deepl.com/api-reference/translate/request-translation).
