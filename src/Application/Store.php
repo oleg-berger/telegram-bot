@@ -27,7 +27,7 @@ interface Store
     public function draft(int $id): ?array;
     public function saveDraft(int $id, int $version, array $changes): bool;
     public function approveDraft(int $id, int $version, int $actor): ?array;
-    public function queueComment(int $userId, string $language, string $text, string $prefix, int $staffId): void;
+    public function queueComment(int $userId, string $language, string $text, string $prefix, int $staffId, array $options = []): void;
     public function queueExport(int $chatId): void;
     public function exportUsers(): array;
     public function translation(int $broadcastId, string $language): ?string;

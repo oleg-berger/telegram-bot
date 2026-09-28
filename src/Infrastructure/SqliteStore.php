@@ -201,9 +201,9 @@ final class SqliteStore implements Store
         return $broadcast;
     }
 
-    public function queueComment(int $userId, string $language, string $text, string $prefix, int $staffId): void
+    public function queueComment(int $userId, string $language, string $text, string $prefix, int $staffId, array $options = []): void
     {
-        $this->job('comment', null, $userId, $language, ['text' => $text, 'prefix' => $prefix, 'staff_id' => $staffId]);
+        $this->job('comment', null, $userId, $language, ['text' => $text, 'prefix' => $prefix, 'staff_id' => $staffId, 'options' => $options]);
     }
 
     public function queueExport(int $chatId): void { $this->job('export', null, $chatId, null, []); }

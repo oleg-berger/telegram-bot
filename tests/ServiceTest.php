@@ -219,6 +219,35 @@ final class ServiceTest extends TestCase
         self::assertNotEmpty($notifications);
     }
 
+    public function testChangesCommentHasEditButtonThatOpensExistingForm(): void
+    {
+        $this->register(1, 'EN-GB');
+        $this->click(100, 'app:changes:1:' . $this->store->user(1)['revision']);
+        $this->say(100, 'Incorrect email address.');
+        [$telegram] = $this->drain();
+        $index = array_search([1, "✏️ Please update your details and submit again.\n\nEN-GB:Incorrect email address."], $telegram->messages, true);
+        self::assertIsInt($index);
+        self::assertSame(['reply_markup' => ['inline_keyboard' => [[
+            ['text' => '✏️ Edit details', 'callback_data' => 'reg:edit'],
+        ]]]], $telegram->messageOptions[$index]);
+
+        $this->click(1, 'reg:edit');
+        [$telegram] = $this->drain();
+        self::assertContains([1, 'Which detail would you like to change?'], $telegram->messages);
+        $this->click(1, 'reg:field:email');
+        self::assertSame('email', $this->store->user(1)['step']);
+        $this->say(1, 'corrected@example.com');
+        $this->click(1, 'reg:submit');
+        self::assertSame('pending', $this->store->user(1)['status']);
+
+        $this->click(100, 'app:reject:1:' . $this->store->user(1)['revision']);
+        $this->say(100, 'Rejected application.');
+        [$telegram] = $this->drain();
+        $index = array_search([1, "Your application has been declined. An administrator must allow a new submission.\n\nEN-GB:Rejected application."], $telegram->messages, true);
+        self::assertIsInt($index);
+        self::assertSame([], $telegram->messageOptions[$index]);
+    }
+
     public function testRetryjobRerunsFailedCommentOnlyForOwner(): void
     {
         $this->store->queueComment(1, 'FR', 'Fix your phone.', 'Prefix', 100);
@@ -513,6 +542,7 @@ final class ServiceTest extends TestCase
 final class FakeTelegram implements TelegramGateway
 {
     public array $messages = [];
+    public array $messageOptions = [];
     public array $documents = [];
     public ?int $blockedChat = null;
     public ?int $failingChat = null;
@@ -521,6 +551,7 @@ final class FakeTelegram implements TelegramGateway
         if ($chatId === $this->blockedChat) { throw new ApiFailure('blocked', blocked: true); }
         if ($chatId === $this->failingChat) { throw new ApiFailure('bad request'); }
         $this->messages[] = [$chatId, $text];
+        $this->messageOptions[] = $options;
     }
     public function getUpdates(int $offset, int $timeout = 25): array { return []; }
     public function answerCallbackQuery(string $id): void {}

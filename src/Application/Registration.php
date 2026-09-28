@@ -142,6 +142,10 @@ final class Registration
 
     private function back(array $user): void
     {
+        if ($user['choosing_language'] || in_array($user['step'], ['language', 'begin'], true)) {
+            $this->prompt($user);
+            return;
+        }
         if ($user['edit_field'] !== '') {
             $user['step'] = 'review';
             $user['edit_field'] = '';
@@ -159,6 +163,10 @@ final class Registration
 
     private function reply(array $user, string $key, array $options = [], array $values = []): void
     {
+        if (isset($options['reply_markup']['inline_keyboard'])) {
+            // Inline markup cannot remove a persistent reply keyboard in the same message.
+            $this->store->queueReply($user['id'], Messages::text($user['language'], 'inline_navigation'), ['reply_markup' => ['remove_keyboard' => true]]);
+        }
         $this->store->queueReply($user['id'], Messages::text($user['language'], $key, $values), $options);
     }
 

@@ -212,7 +212,10 @@ final class Staff
         $user = $this->store->user($session['id']);
         $status = $session['kind'] === 'app:reject' ? 'rejected' : 'changes';
         if (!$user || !$this->store->decideApplication($user['id'], $session['revision'], $status, $id)) { $this->stale($id); return; }
-        $this->store->queueComment($user['id'], $user['language'], $text, Messages::text($user['language'], $status), $id);
+        $options = $status === 'changes' ? ['reply_markup' => ['inline_keyboard' => [[
+            ['text' => Messages::text($user['language'], 'edit'), 'callback_data' => 'reg:edit'],
+        ]]]] : [];
+        $this->store->queueComment($user['id'], $user['language'], $text, Messages::text($user['language'], $status), $id, $options);
         $this->store->saveSession($id, null);
         $this->reply($id, 'Решение сохранено. Комментарий поставлен на перевод и доставку.');
     }

@@ -1,4 +1,10 @@
 {
+  "inline_navigation": [
+    "Продолжите с помощью кнопок под следующим сообщением.",
+    "Continue using the buttons below the next message.",
+    "Continúa usando los botones debajo del siguiente mensaje.",
+    "Continuez avec les boutons sous le prochain message."
+  ],
   "test_reset_unavailable": [
     "Сброс анкеты доступен только суперадминистратору в тестовом режиме.",
     "Registration reset is available only to a superadmin in test mode.",

@@ -142,7 +142,7 @@ final class Worker
             return;
         }
         // The original comment is never substituted for a missing translation.
-        $this->sendParts($job, $payload['prefix'] . "\n\n" . $payload['translated']);
+        $this->sendParts($job, $payload['prefix'] . "\n\n" . $payload['translated'], $payload['options'] ?? []);
     }
 
     private function export(array $job): void
