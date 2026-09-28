@@ -77,6 +77,11 @@ final class SqliteStore implements Store
         $this->job('message', null, $chatId, null, ['text' => $text, 'options' => $options]);
     }
 
+    public function queuePhoto(int $chatId, string $caption): void
+    {
+        $this->job('photo', null, $chatId, null, ['caption' => $caption]);
+    }
+
     public function queueCallback(string $id): void { $this->job('callback', null, null, null, ['id' => $id]); }
 
     public function createBroadcast(int $adminId, string $text): array
@@ -225,11 +230,11 @@ final class SqliteStore implements Store
         // Network calls run outside transactions. The process lock guarantees one worker.
         $job = $this->one("SELECT j.* FROM jobs j LEFT JOIN broadcasts b ON b.id=j.broadcast_id
             WHERE j.status='pending' AND j.next_at<=? AND (
-                j.kind IN ('message','callback','translate','comment','export') OR
+                j.kind IN ('message','photo','callback','translate','comment','export') OR
                 (j.kind='translate_subject' AND EXISTS (SELECT 1 FROM translations t WHERE t.broadcast_id=j.broadcast_id AND t.language=j.language)) OR
                 (j.kind='delivery' AND b.status='ready' AND EXISTS (
                     SELECT 1 FROM translations t WHERE t.broadcast_id=j.broadcast_id AND t.language=j.language AND t.subject IS NOT NULL)))
-            ORDER BY CASE j.kind WHEN 'callback' THEN 0 WHEN 'message' THEN 1 WHEN 'translate' THEN 2 WHEN 'translate_subject' THEN 2 ELSE 3 END, j.id LIMIT 1", [$now]);
+            ORDER BY CASE j.kind WHEN 'callback' THEN 0 WHEN 'message' THEN 1 WHEN 'photo' THEN 1 WHEN 'translate' THEN 2 WHEN 'translate_subject' THEN 2 ELSE 3 END, j.id LIMIT 1", [$now]);
         if ($job !== null) { $job['payload'] = json_decode($job['payload'], true, flags: JSON_THROW_ON_ERROR); }
         return $job;
     }

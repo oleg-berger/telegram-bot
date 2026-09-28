@@ -11,6 +11,7 @@ interface Store
     public function user(int $id): ?array;
     public function saveUser(array $user): void;
     public function queueReply(int $chatId, string $text, array $options = []): void;
+    public function queuePhoto(int $chatId, string $caption): void;
     public function queueCallback(string $id): void;
     public function createBroadcast(int $adminId, string $text): array;
     public function broadcast(int $id): ?array;

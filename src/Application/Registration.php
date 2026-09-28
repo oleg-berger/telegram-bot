@@ -14,6 +14,10 @@ final class Registration
         $text = trim($message['text'] ?? '');
         $user = $this->store->user($id);
         if (!$user) {
+            if ($text === '/help') {
+                $this->store->queuePhoto($id, Messages::text('RU', 'help'));
+                return;
+            }
             if ($text !== '/start') {
                 $this->store->queueReply($id, '/start — Русский / English / Español / Français');
                 return;
@@ -34,6 +38,10 @@ final class Registration
                 $this->store->saveUser($user);
             }
             $this->prompt($user);
+            return;
+        }
+        if ($text === '/help') {
+            $this->store->queuePhoto($id, Messages::text($user['language'], 'help'));
             return;
         }
         if (str_starts_with($text, '/')) { $this->reply($user, 'help'); return; }

@@ -113,6 +113,28 @@ final class ServiceTest extends TestCase
         }
     }
 
+    public function testHelpQueuesBrandedPhotoInEveryUserLanguage(): void
+    {
+        $this->say(5, '/help');
+        self::assertNull($this->store->user(5));
+        foreach (['RU', 'EN-GB', 'ES', 'FR'] as $i => $language) {
+            $id = $i + 1;
+            $this->say($id, '/start');
+            $this->click($id, 'language:' . $language);
+            $this->say($id, '/help');
+        }
+
+        [$telegram] = $this->drain();
+        self::assertCount(5, $telegram->photos);
+        self::assertSame([5, dirname(__DIR__) . '/assets/help-card.png', \Broadcast\Application\Messages::text('RU', 'help')], $telegram->photos[0]);
+        foreach (array_slice($telegram->photos, 1) as $i => [$id, $path, $caption]) {
+            self::assertSame($i + 1, $id);
+            self::assertSame('help-card.png', basename($path));
+            self::assertFileExists($path);
+            self::assertSame(\Broadcast\Application\Messages::text($this->store->user($id)['language'], 'help'), $caption);
+        }
+    }
+
     public function testForeignContactIsRejectedAndOwnContactAccepted(): void
     {
         $this->say(1, '/start');
@@ -542,6 +564,7 @@ final class ServiceTest extends TestCase
 final class FakeTelegram implements TelegramGateway
 {
     public array $messages = [];
+    public array $photos = [];
     public array $messageOptions = [];
     public array $documents = [];
     public ?int $blockedChat = null;
@@ -554,6 +577,7 @@ final class FakeTelegram implements TelegramGateway
         $this->messageOptions[] = $options;
     }
     public function getUpdates(int $offset, int $timeout = 25): array { return []; }
+    public function sendPhoto(int $chatId, string $path, string $caption): void { $this->photos[] = [$chatId, $path, $caption]; }
     public function answerCallbackQuery(string $id): void {}
     public function sendDocument(int $chatId, string $path, string $filename): void
     {

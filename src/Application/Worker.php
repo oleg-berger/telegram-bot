@@ -36,6 +36,7 @@ final class Worker
                 'translate_subject' => $this->translateSubject($job),
                 'delivery' => $this->deliver($job, $now),
                 'message' => $this->message($job),
+                'photo' => $this->photo($job),
                 'callback' => $this->callback($job),
                 'comment' => $this->comment($job),
                 'export' => $this->export($job),
@@ -113,6 +114,14 @@ final class Worker
     private function message(array $job): void
     {
         $this->sendParts($job, $job['payload']['text'], $job['payload']['options']);
+    }
+
+    private function photo(array $job): void
+    {
+        $path = dirname(__DIR__, 2) . '/assets/help-card.png';
+        if (!is_file($path)) { throw new ApiFailure('Help image is unavailable.'); }
+        $this->telegram->sendPhoto($job['user_id'], $path, $job['payload']['caption']);
+        $this->store->completeJob($job['id']);
     }
 
     private function sendParts(array $job, string $text, array $options = []): void

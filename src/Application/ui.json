@@ -306,9 +306,9 @@
     "🌍 Langue enregistrée pour les prochains messages Telegram et e-mails."
   ],
   "help": [
-    "/start — регистрация или статус заявки\n/language — смена языка\n/help — помощь\nБот отправляет объявления. Ответы на них не обрабатываются.",
-    "/start — register or check application status\n/language — change language\n/help — help\nThis bot sends announcements. Replies are not monitored.",
-    "/start — registro o estado de la solicitud\n/language — cambiar idioma\n/help — ayuda\nEste bot envía anuncios. No se atienden las respuestas.",
-    "/start — inscription ou état de la demande\n/language — changer de langue\n/help — aide\nCe bot diffuse des annonces. Les réponses ne sont pas traitées."
+    "Новости Imén Nails для зарегистрированных пользователей. Заполните анкету: после одобрения объявления будут приходить в Telegram и на email.\n\n/start — регистрация или статус заявки\n/language — смена языка\n/help — помощь\nОтветы на объявления не обрабатываются.",
+    "Imén Nails news for registered users. Complete your details: after approval, announcements will arrive in Telegram and by email.\n\n/start — register or check application status\n/language — change language\n/help — help\nReplies to announcements are not monitored.",
+    "Noticias de Imén Nails para usuarios registrados. Complete sus datos: tras la aprobación, recibirá anuncios en Telegram y por email.\n\n/start — registro o estado de la solicitud\n/language — cambiar idioma\n/help — ayuda\nNo se atienden las respuestas a los anuncios.",
+    "Actualités Imén Nails pour les utilisateurs inscrits. Complétez votre dossier : après validation, vous recevrez les annonces sur Telegram et par e-mail.\n\n/start — inscription ou état de la demande\n/language — changer de langue\n/help — aide\nLes réponses aux annonces ne sont pas traitées."
   ]
 }
