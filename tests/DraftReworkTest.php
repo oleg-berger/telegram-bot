@@ -90,7 +90,8 @@ final class DraftReworkTest extends TestCase
             $this->click(99, 'draft:' . $field . ':1:' . $draft['version']);
             $messages = $this->drain();
             self::assertCount(2, $messages);
-            self::assertSame($value, $messages[0]['options']['reply_markup']['inline_keyboard'][0][0]['copy_text']['text']);
+            self::assertSame(Messages::text('RU', 'draft_edit_prompt'), $messages[0]['text']);
+            self::assertSame([], $messages[0]['options']);
             self::assertSame($value, $messages[1]['text']);
             self::assertSame([['type' => 'pre', 'offset' => 0, 'length' => intdiv(strlen(mb_convert_encoding($value, 'UTF-16LE', 'UTF-8')), 2)]], $messages[1]['options']['entities']);
             self::assertTrue($messages[1]['options']['reply_markup']['force_reply']);

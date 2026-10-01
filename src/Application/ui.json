@@ -17,9 +17,6 @@
   "draft_edit_subject": [
     "✏️ Изменить тему", "✏️ Edit subject", "✏️ Editar asunto", "✏️ Modifier l’objet"
   ],
-  "draft_copy": [
-    "📋 Скопировать", "📋 Copy", "📋 Copiar", "📋 Copier"
-  ],
   "draft_edit_prompt": [
     "Скопируйте исходное содержимое ниже, вставьте в поле ввода, исправьте и отправьте. Для темы — одна строка до 200 символов. /cancel — отменить черновик.",
     "Copy the original content below, paste it into the input field, edit and send it. Subjects must be one line of up to 200 characters. /cancel — cancel the draft.",

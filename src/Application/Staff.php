@@ -212,10 +212,7 @@ final class Staff
 
     private function editPrompt(int $id, string $value): void
     {
-        $buttons = $value !== '' && mb_strlen($value) <= 256 ? [[[
-            'text' => Messages::text('RU', 'draft_copy'), 'copy_text' => ['text' => $value],
-        ]]] : [];
-        $this->reply($id, Messages::text('RU', 'draft_edit_prompt'), $buttons);
+        $this->reply($id, Messages::text('RU', 'draft_edit_prompt'));
         $parts = TextParts::split($value);
         foreach ($parts as $i => $part) {
             $options = ['entities' => [['type' => 'pre', 'offset' => 0, 'length' => intdiv(strlen(mb_convert_encoding($part, 'UTF-16LE', 'UTF-8')), 2)]]];
