@@ -42,10 +42,14 @@ final class Staff
             $draft = $this->store->draft($session['id']);
             if (!$draft || $draft['status'] !== 'pending' || $draft['version'] !== $session['version']) { $this->stale($id); return; }
             $this->store->saveDraft($draft['id'], $draft['version'], ['status' => 'changes']);
-            $this->reply($draft['admin_id'], '✏️ Объявление #' . $draft['id'] . " возвращено на доработку.\n" . $text);
-            $this->preview($draft['admin_id'], $this->store->draft($draft['id']));
+            $draft = $this->store->draft($draft['id']);
+            $buttons = [];
+            foreach (['text', 'subject'] as $field) {
+                $buttons[] = [['text' => Messages::text('RU', 'draft_edit_' . $field), 'callback_data' => 'draft:' . $field . ':' . $draft['id'] . ':' . $draft['version']]];
+            }
+            $this->reply($draft['admin_id'], Messages::text('RU', 'draft_returned', ['comment' => $text]), $buttons);
             $this->store->saveSession($id, null);
-            $this->reply($id, 'Комментарий отправлен автору.');
+            $this->reply($id, Messages::text('RU', 'draft_return_sent'));
             return;
         }
         if ($session && in_array($session['kind'], ['draft:subject', 'draft:text'], true)) {
@@ -202,7 +206,23 @@ final class Staff
             $this->reply($id, 'Черновик отменён.');
         } else {
             $this->store->saveSession($id, ['kind' => 'draft:' . $action, 'id' => $draft['id'], 'version' => $draft['version']]);
-            $this->reply($id, $action === 'text' ? 'Введите новый текст объявления.' : 'Введите тему письма одной строкой (до 200 символов).');
+            $this->editPrompt($id, $draft[$action]);
+        }
+    }
+
+    private function editPrompt(int $id, string $value): void
+    {
+        $buttons = $value !== '' && mb_strlen($value) <= 256 ? [[[
+            'text' => Messages::text('RU', 'draft_copy'), 'copy_text' => ['text' => $value],
+        ]]] : [];
+        $this->reply($id, Messages::text('RU', 'draft_edit_prompt'), $buttons);
+        $parts = TextParts::split($value);
+        foreach ($parts as $i => $part) {
+            $options = ['entities' => [['type' => 'pre', 'offset' => 0, 'length' => intdiv(strlen(mb_convert_encoding($part, 'UTF-16LE', 'UTF-8')), 2)]]];
+            if ($i === count($parts) - 1) {
+                $options['reply_markup'] = ['force_reply' => true, 'input_field_placeholder' => Messages::text('RU', 'draft_edit_placeholder')];
+            }
+            $this->store->queueReply($id, $part, $options);
         }
     }
 

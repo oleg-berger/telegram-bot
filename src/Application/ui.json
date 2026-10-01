@@ -1,4 +1,34 @@
 {
+  "draft_returned": [
+    "✏️ Суперадминистратор отправил ваше объявление на доработку.\n\n{comment}",
+    "✏️ The superadmin returned your announcement for revision.\n\n{comment}",
+    "✏️ El superadministrador devolvió su anuncio para revisión.\n\n{comment}",
+    "✏️ Le superadministrateur a renvoyé votre annonce pour modification.\n\n{comment}"
+  ],
+  "draft_return_sent": [
+    "Комментарий отправлен автору.",
+    "The comment was sent to the author.",
+    "El comentario se envió al autor.",
+    "Le commentaire a été envoyé à l’auteur."
+  ],
+  "draft_edit_text": [
+    "✏️ Изменить текст", "✏️ Edit text", "✏️ Editar texto", "✏️ Modifier le texte"
+  ],
+  "draft_edit_subject": [
+    "✏️ Изменить тему", "✏️ Edit subject", "✏️ Editar asunto", "✏️ Modifier l’objet"
+  ],
+  "draft_copy": [
+    "📋 Скопировать", "📋 Copy", "📋 Copiar", "📋 Copier"
+  ],
+  "draft_edit_prompt": [
+    "Скопируйте исходное содержимое ниже, вставьте в поле ввода, исправьте и отправьте. Для темы — одна строка до 200 символов. /cancel — отменить черновик.",
+    "Copy the original content below, paste it into the input field, edit and send it. Subjects must be one line of up to 200 characters. /cancel — cancel the draft.",
+    "Copie el contenido original de abajo, péguelo, corríjalo y envíelo. El asunto debe tener una línea de hasta 200 caracteres. /cancel — cancelar el borrador.",
+    "Copiez le contenu original ci-dessous, collez-le, modifiez-le et envoyez-le. L’objet doit tenir sur une ligne de 200 caractères maximum. /cancel — annuler le brouillon."
+  ],
+  "draft_edit_placeholder": [
+    "Вставьте и исправьте исходное содержимое", "Paste and edit the original content", "Pegue y edite el contenido original", "Collez et modifiez le contenu original"
+  ],
   "inline_navigation": [
     "Продолжите с помощью кнопок под следующим сообщением.",
     "Continue using the buttons below the next message.",
