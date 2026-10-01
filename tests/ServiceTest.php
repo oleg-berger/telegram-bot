@@ -331,7 +331,12 @@ final class ServiceTest extends TestCase
         $this->approve(1);
         $this->say($author, 'News');
         $this->say($author, 'Subject');
-        $this->click($author, 'draft:submit:1:' . $this->store->draft(1)['version']);
+        if ($author === 99) {
+            $this->click($author, 'draft:submit:1:' . $this->store->draft(1)['version']);
+        } else {
+            // Preserve coverage for superadmin drafts submitted before direct sending was introduced.
+            $this->store->transaction(fn () => $this->store->saveDraft(1, $this->store->draft(1)['version'], ['status' => 'pending']));
+        }
         $this->drain();
 
         $version = $this->store->draft(1)['version'];

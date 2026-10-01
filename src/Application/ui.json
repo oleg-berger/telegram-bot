@@ -1,4 +1,58 @@
 {
+  "draft_send": [
+    "📨 Разослать", "📨 Send broadcast", "📨 Enviar anuncio", "📨 Diffuser"
+  ],
+  "draft_submit": [
+    "📨 На согласование", "📨 Submit for approval", "📨 Enviar para aprobación", "📨 Soumettre pour approbation"
+  ],
+  "draft_approve": [
+    "✅ Одобрить и разослать", "✅ Approve and send", "✅ Aprobar y enviar", "✅ Approuver et diffuser"
+  ],
+  "draft_return": [
+    "✏️ Вернуть на доработку", "✏️ Return for revision", "✏️ Devolver para revisión", "✏️ Renvoyer pour modification"
+  ],
+  "draft_cancel": [
+    "Отменить черновик", "Cancel draft", "Cancelar borrador", "Annuler le brouillon"
+  ],
+  "draft_subject_label": [
+    "Тема:", "Subject:", "Asunto:", "Objet :"
+  ],
+  "draft_send_prompt": [
+    "Разослать пользователям или отредактировать?", "Send to users or edit?", "¿Enviar a los usuarios o editar?", "Diffuser aux utilisateurs ou modifier ?"
+  ],
+  "draft_preview_header": [
+    "Объявление #{id} · {status}", "Announcement #{id} · {status}", "Anuncio #{id} · {status}", "Annonce #{id} · {status}"
+  ],
+  "broadcast_started": [
+    "✅ Рассылка #{id} запущена. Получателей: {recipients}. Готовим переводы.",
+    "✅ Broadcast #{id} started. Recipients: {recipients}. Preparing translations.",
+    "✅ Anuncio #{id} iniciado. Destinatarios: {recipients}. Preparando traducciones.",
+    "✅ Diffusion #{id} lancée. Destinataires : {recipients}. Préparation des traductions."
+  ],
+  "draft_send_denied": [
+    "Прямая отправка доступна только суперадминистратору. Отправьте черновик на согласование.",
+    "Only superadmins can send directly. Submit the draft for approval.",
+    "Solo los superadministradores pueden enviar directamente. Envíe el borrador para aprobación.",
+    "Seuls les superadministrateurs peuvent diffuser directement. Soumettez le brouillon pour approbation."
+  ],
+  "draft_subject_required": [
+    "Сначала укажите тему письма.", "Enter the email subject first.", "Primero indique el asunto del correo.", "Indiquez d’abord l’objet du courriel."
+  ],
+  "draft_subject_invalid": [
+    "Укажите тему одной строкой, до 200 символов.", "Enter a subject on one line, up to 200 characters.", "Indique el asunto en una línea de hasta 200 caracteres.", "Indiquez l’objet sur une ligne de 200 caractères maximum."
+  ],
+  "draft_subject_prompt": [
+    "✉️ Черновик #{id} сохранён. Введите тему письма одной строкой (до 200 символов).\n/cancel — отменить черновик",
+    "✉️ Draft #{id} saved. Enter the email subject on one line (up to 200 characters).\n/cancel — cancel the draft",
+    "✉️ Borrador #{id} guardado. Indique el asunto en una línea (hasta 200 caracteres).\n/cancel — cancelar el borrador",
+    "✉️ Brouillon #{id} enregistré. Indiquez l’objet sur une ligne (200 caractères maximum).\n/cancel — annuler le brouillon"
+  ],
+  "superadmin_broadcast_help": [
+    "📝 Отправьте текст объявления, затем тему письма. Проверьте предпросмотр и нажмите «Разослать».\n/draft ID — открыть черновик\n/retry ID — повторить ошибки рассылки\n/cancel — отменить ввод\n/help — помощь",
+    "📝 Send the announcement text, then the email subject. Check the preview and press Send broadcast.\n/draft ID — open a draft\n/retry ID — retry failed deliveries\n/cancel — cancel input\n/help — help",
+    "📝 Envíe el texto del anuncio y después el asunto. Revise la vista previa y pulse Enviar anuncio.\n/draft ID — abrir un borrador\n/retry ID — reintentar entregas fallidas\n/cancel — cancelar\n/help — ayuda",
+    "📝 Envoyez le texte de l’annonce, puis l’objet. Vérifiez l’aperçu et appuyez sur Diffuser.\n/draft ID — ouvrir un brouillon\n/retry ID — réessayer les envois échoués\n/cancel — annuler la saisie\n/help — aide"
+  ],
   "draft_returned": [
     "✏️ Суперадминистратор отправил ваше объявление на доработку.\n\n{comment}",
     "✏️ The superadmin returned your announcement for revision.\n\n{comment}",
