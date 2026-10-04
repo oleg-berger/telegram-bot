@@ -24,7 +24,6 @@ final readonly class Config
         public string $mailTransport,
         public array $gmail,
         public int $mailSendIntervalSeconds,
-        public bool $testMode,
     ) {}
 
     /** @param array<string, mixed> $environment */
@@ -103,7 +102,6 @@ final readonly class Config
             $transport,
             $gmail,
             self::integer($environment, 'MAIL_SEND_INTERVAL_SECONDS', 1, 86400, 2),
-            $test,
         );
     }
 

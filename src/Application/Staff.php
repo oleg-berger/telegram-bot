@@ -7,7 +7,7 @@ use Broadcast\Domain\TextParts;
 
 final class Staff
 {
-    public function __construct(private Store $store, private array $superadmins, private bool $adminsCanApprove, private bool $adminsCanExport, private bool $testMode = false) {}
+    public function __construct(private Store $store, private array $superadmins, private bool $adminsCanApprove, private bool $adminsCanExport) {}
 
     private function super(int $id): bool
     {
@@ -72,21 +72,6 @@ final class Staff
 
     private function command(int $id, string $text): void
     {
-        if (preg_match('/^\/resetuser\s+([1-9][0-9]*)$/D', $text, $match)) {
-            if (!$this->testMode || !$this->super($id)) {
-                $this->reply($id, Messages::text('RU', 'test_reset_unavailable'));
-                return;
-            }
-            $userId = filter_var($match[1], FILTER_VALIDATE_INT);
-            $user = $userId === false ? null : $this->store->user($userId);
-            if (!$user || !$this->store->resetTestUser($userId)) {
-                $this->reply($id, Messages::text('RU', 'test_reset_not_found'));
-                return;
-            }
-            $this->store->queueReply($userId, Messages::text($user['language'], 'test_reset_user'), ['reply_markup' => ['remove_keyboard' => true]]);
-            $this->reply($id, Messages::text('RU', 'test_reset_done', ['id' => $userId]));
-            return;
-        }
         if (preg_match('/^\/retryjob\s+([1-9][0-9]*)$/D', $text, $match)) {
             if (!$this->approveUsers($id) && !$this->adminsCanExport) { $this->reply($id, 'Недостаточно прав.'); return; }
             $this->reply($id, $this->store->retryAuxiliaryJob((int) $match[1], $id, $this->super($id)) ? 'Задание поставлено на повтор.' : 'Задание недоступно или не содержит ошибки.');
@@ -143,7 +128,6 @@ final class Staff
         if ($this->super($id) || $this->adminsCanExport) { $help .= "\n/userdata — общая база Excel"; }
         if ($this->approveUsers($id) || $this->adminsCanExport) { $help .= "\n/retryjob ID — повторить ошибку комментария или Excel"; }
         if ($this->super($id)) { $help .= "\n/unsubscribe ID — отписать пользователя"; }
-        if ($this->testMode && $this->super($id)) { $help .= "\n" . Messages::text('RU', 'test_reset_help'); }
         $this->reply($id, $help);
     }
 

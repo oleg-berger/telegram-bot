@@ -10,11 +10,11 @@ final class Kernel
     private Staff $staff;
     private array $staffIds;
 
-    public function __construct(private Store $store, array $adminIds, array $superadminIds = [], bool $adminsCanApprove = false, bool $adminsCanExport = false, bool $testMode = false)
+    public function __construct(private Store $store, array $adminIds, array $superadminIds = [], bool $adminsCanApprove = false, bool $adminsCanExport = false)
     {
         $this->staffIds = array_unique([...$adminIds, ...$superadminIds]);
         $this->registration = new Registration($store, $adminsCanApprove ? $this->staffIds : $superadminIds);
-        $this->staff = new Staff($store, $superadminIds, $adminsCanApprove, $adminsCanExport, $testMode);
+        $this->staff = new Staff($store, $superadminIds, $adminsCanApprove, $adminsCanExport);
     }
 
     public function handle(array $update): void
