@@ -147,10 +147,10 @@
     "Telegram : envoyés {done}, ignorés {skipped}, erreurs {failed}."
   ],
   "broadcast_report_email": [
-    "Email (принято SMTP): отправлено {done}, пропущено {skipped}, ошибки {failed}.",
-    "Email (accepted by SMTP): sent {done}, skipped {skipped}, errors {failed}.",
-    "Email (aceptado por SMTP): enviados {done}, omitidos {skipped}, errores {failed}.",
-    "Email (accepté par SMTP) : envoyés {done}, ignorés {skipped}, erreurs {failed}."
+    "Email (принято почтовым сервисом): отправлено {done}, пропущено {skipped}, ошибки {failed}.",
+    "Email (accepted by mail service): sent {done}, skipped {skipped}, errors {failed}.",
+    "Email (aceptado por el servicio de correo): enviados {done}, omitidos {skipped}, errores {failed}.",
+    "Email (accepté par le service de messagerie) : envoyés {done}, ignorés {skipped}, erreurs {failed}."
   ],
   "draft_author": [
     "Автор: {author}",

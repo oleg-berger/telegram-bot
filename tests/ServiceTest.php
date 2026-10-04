@@ -311,7 +311,7 @@ final class ServiceTest extends TestCase
         self::assertContains([1, 'RU:News'], $telegram->messages);
         self::assertContains(['user1@example.com', 'RU:Subject', 'RU:News'], $mailer->mails);
         self::assertSame([[99, 'Неуспешные задания поставлены на повтор.']], array_values(array_filter($telegram->messages, fn ($m) => $m[0] === 99)));
-        self::assertContains([100, "Рассылка #1:\nTelegram: отправлено 1, пропущено 0, ошибки 0.\nEmail (принято SMTP): отправлено 1, пропущено 0, ошибки 0."], $telegram->messages);
+        self::assertContains([100, "Рассылка #1:\nTelegram: отправлено 1, пропущено 0, ошибки 0.\nEmail (принято почтовым сервисом): отправлено 1, пропущено 0, ошибки 0."], $telegram->messages);
     }
 
     public static function broadcastReportScenarios(): iterable
@@ -349,7 +349,7 @@ final class ServiceTest extends TestCase
         [$telegram, , $mailer] = $this->drain(null, $translator);
         $done = $failedText === null ? 1 : 0;
         $failed = 1 - $done;
-        $report = "Рассылка #1:\nTelegram: отправлено $done, пропущено 0, ошибки $failed.\nEmail (принято SMTP): отправлено $done, пропущено 0, ошибки $failed.";
+        $report = "Рассылка #1:\nTelegram: отправлено $done, пропущено 0, ошибки $failed.\nEmail (принято почтовым сервисом): отправлено $done, пропущено 0, ошибки $failed.";
         $reports = array_values(array_filter($telegram->messages, fn ($m) => str_contains($m[1], 'Telegram:')));
         self::assertSame([[100, $report]], $reports);
         $failures = array_values(array_filter($telegram->messages, fn ($m) => str_contains($m[1], 'не удалось подготовить перевод')));
@@ -379,7 +379,7 @@ final class ServiceTest extends TestCase
         [$telegram] = $this->drain(null, null, $mailer);
         self::assertContains([1, 'RU:News'], $telegram->messages);
         self::assertCount(0, $mailer->mails);
-        self::assertContains([100, "Рассылка #1:\nTelegram: отправлено 1, пропущено 0, ошибки 0.\nEmail (принято SMTP): отправлено 0, пропущено 0, ошибки 1."], $telegram->messages);
+        self::assertContains([100, "Рассылка #1:\nTelegram: отправлено 1, пропущено 0, ошибки 0.\nEmail (принято почтовым сервисом): отправлено 0, пропущено 0, ошибки 1."], $telegram->messages);
         self::assertSame([], array_values(array_filter($telegram->messages, fn ($m) => $m[0] === 99 && str_contains($m[1], 'Telegram:'))));
         $this->say(99, '/retry 1');
         [, , $mailer] = $this->drain();

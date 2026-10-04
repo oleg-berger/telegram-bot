@@ -9,6 +9,7 @@ use Broadcast\Infrastructure\Export\XlsxUsers;
 use Broadcast\Infrastructure\Http\DeepLTranslator;
 use Broadcast\Infrastructure\Http\TelegramClient;
 use Broadcast\Infrastructure\Mail\SmtpMailer;
+use Broadcast\Infrastructure\Mail\GmailApiMailer;
 use Broadcast\Infrastructure\Runtime\CommandMenu;
 use Broadcast\Infrastructure\Runtime\Config;
 use Broadcast\Infrastructure\Runtime\DailyBackup;
@@ -87,7 +88,7 @@ try {
             $name = $event['event'];
             unset($event['event']);
             $log->event($name, $event);
-        }, new SmtpMailer(...$config->smtp), new XlsxUsers(), $config->mailSendIntervalSeconds);
+        }, $config->mailTransport === 'gmail' ? new GmailApiMailer(...$config->gmail) : new SmtpMailer(...$config->smtp), new XlsxUsers(), $config->mailSendIntervalSeconds);
     $dailyBackup = new DailyBackup($path, $backupDirectory, $runtimeDirectory);
     $stop = new StopSignal();
     $once = in_array('--once', $argv, true);

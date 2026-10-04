@@ -163,7 +163,7 @@ final class SuperadminBroadcastTest extends TestCase
         self::assertSame([100, 100], array_column($staff, 'id'));
         self::assertSame(Messages::text('RU', 'broadcast_started', ['id' => 1, 'recipients' => 2]), $staff[0]['text']);
         self::assertStringContainsString('Telegram: отправлено 2', $staff[1]['text']);
-        self::assertStringContainsString('Email (принято SMTP): отправлено 2', $staff[1]['text']);
+        self::assertStringContainsString('Email (принято почтовым сервисом): отправлено 2', $staff[1]['text']);
         self::assertStringNotContainsString('Private', json_encode($this->logs, JSON_THROW_ON_ERROR));
         self::assertStringNotContainsString('private', json_encode($this->logs, JSON_THROW_ON_ERROR));
     }

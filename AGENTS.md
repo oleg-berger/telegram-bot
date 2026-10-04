@@ -6,8 +6,9 @@
 
 - `src/Application` — логика: `Kernel` (роутинг updates), `Registration`, `Staff`, `Worker`, `Messages` + `ui.json` (заранее переведённые UI-тексты на RU/EN-GB/ES/FR). Интерфейсы внешних зависимостей: `Store`, `TelegramGateway`, `Translator`, `MailGateway`, `UserExporter`.
 - `src/Domain` — `TextParts` (деление длинных текстов), `PhoneNumber` (нормализация и страна по коду), `ApiFailure` (классификация ошибок API: transient/retryAfter/blocked).
-- `src/Infrastructure` — `SqliteStore` (единственная реализация Store), `Http` (TelegramClient, DeepLTranslator, CurlHttpClient), `Mail/SmtpMailer` (PHPMailer), `Export/XlsxUsers` (OpenSpout), `Runtime` (Config, Poller, ProcessLock, DailyBackup, SqliteBackup, Log, StopSignal, CommandMenu).
+- `src/Infrastructure` — `SqliteStore` (единственная реализация Store), `Http` (TelegramClient, DeepLTranslator, CurlHttpClient), `Mail/SmtpMailer` (PHPMailer), `Mail/GmailApiMailer` (Gmail API OAuth), `GoogleOAuthFiles` (приватные JSON), `GmailAuthorization` (локальная настройка Desktop OAuth), `Export/XlsxUsers` (OpenSpout), `Runtime` (Config, Poller, ProcessLock, DailyBackup, SqliteBackup, Log, StopSignal, CommandMenu).
 - `migrations` — SQL-миграции по порядку номеров; применяет `SqliteStore::migrate()` (каждая в своей строке таблицы `migrations`).
+- `bin/gmail-authorize CLIENT_JSON TOKEN_JSON` — разовая локальная авторизация Gmail Desktop app оператором (browser + loopback/PKCE), без отправки писем; инструкция docs/GMAIL.md. Секреты хранятся отдельно в secrets, исключены из Git и образа.
 - `bin/console` — единая точка входа: `poll`, `worker`, `migrate`, `check`, `commands`, `backup`, `restore`.
 - `tests` — PHPUnit 11, фейки внешних API внутри тестовых файлов.
 
@@ -39,7 +40,7 @@ docker compose -f compose.yaml -f compose.test.yaml up -d # + Mailpit (тест�
 
 ## Конфигурация
 
-Читается только из переменных окружения (загрузчика `.env` нет, Compose подставляет файл сам). Обязательные ключи: `TELEGRAM_BOT_TOKEN`, `TELEGRAM_ADMIN_IDS`, `TELEGRAM_SUPERADMIN_IDS`, `TRANSLATOR_API_KEY`, `TRANSLATOR_API_URL` (`https://api-free.deepl.com` или `https://api.deepl.com`, без пути; модель и температура не используются), `DATABASE_PATH`, `SMTP_HOST/PORT/ENCRYPTION/USERNAME/PASSWORD`, `MAIL_FROM_ADDRESS/NAME`. Опциональные: `APP_ENV` (`production` по умолчанию; `test` разрешает `SMTP_ENCRYPTION=none` и пустые почтовые доступы — только локальный приёмник), `ADMINS_CAN_APPROVE_USERS`, `ADMINS_CAN_EXPORT_USERS` (`true`/`false`), `MAIL_REPLY_TO`, `MAIL_SEND_INTERVAL_SECONDS` (1–86400, по умолчанию 2). Значения с префиксом `replace_with_` отклоняются. `Config` бросает одно общее сообщение без значений секретов.
+Читается только из переменных окружения (загрузчика `.env` нет, Compose подставляет файл сам). Обязательные ключи: `TELEGRAM_BOT_TOKEN`, `TELEGRAM_ADMIN_IDS`, `TELEGRAM_SUPERADMIN_IDS`, `TRANSLATOR_API_KEY`, `TRANSLATOR_API_URL` (`https://api-free.deepl.com` или `https://api.deepl.com`, без пути; модель и температура не используются), `DATABASE_PATH`, `MAIL_FROM_ADDRESS/NAME`. `MAIL_TRANSPORT=smtp` по умолчанию требует `SMTP_HOST/PORT/ENCRYPTION/USERNAME/PASSWORD`; `MAIL_TRANSPORT=gmail` требует `GMAIL_OAUTH_CLIENT_FILE` и `GMAIL_OAUTH_TOKEN_FILE` — пути к приватным JSON OAuth-клиента и refresh token. Файлы читаются без сети при check; секреты не печатаются. Опциональные: `APP_ENV` (`production` по умолчанию; `test` разрешает `SMTP_ENCRYPTION=none` и пустые почтовые доступы — только локальный приёмник), `ADMINS_CAN_APPROVE_USERS`, `ADMINS_CAN_EXPORT_USERS` (`true`/`false`), `MAIL_REPLY_TO`, `MAIL_SEND_INTERVAL_SECONDS` (1–86400, по умолчанию 2). Значения с префиксом `replace_with_` отклоняются. `Config` бросает одно общее сообщение без значений секретов.
 
 ## Ключевые инварианты — не нарушать
 
