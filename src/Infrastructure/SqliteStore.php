@@ -88,7 +88,7 @@ final class SqliteStore implements Store
     {
         $this->run('INSERT INTO broadcasts(admin_id,text,created_at) VALUES (?,?,?)', [$adminId, $text, time()]);
         $id = (int) $this->db->lastInsertId();
-        $users = $this->run("SELECT id,language FROM users WHERE status='approved' ORDER BY id")->fetchAll();
+        $users = $this->run("SELECT id,language FROM users WHERE status='approved' AND id!=? ORDER BY id", [$adminId])->fetchAll();
         foreach ($users as $user) {
             $this->job('translate', $id, null, $user['language'], [], true);
             $this->job('translate_subject', $id, null, $user['language'], [], true);
@@ -103,8 +103,8 @@ final class SqliteStore implements Store
 
     public function addCatchup(int $userId, string $language): bool
     {
-        $broadcast = $this->one("SELECT id FROM broadcasts WHERE status='ready' ORDER BY id DESC LIMIT 1");
-        if ($broadcast === null) { return false; }
+        $broadcast = $this->one("SELECT id,admin_id FROM broadcasts WHERE status='ready' ORDER BY id DESC LIMIT 1");
+        if ($broadcast === null || $broadcast['admin_id'] === $userId) { return false; }
         $this->job('translate', $broadcast['id'], null, $language);
         $this->job('translate_subject', $broadcast['id'], null, $language);
         $telegramAdded = $this->job('delivery', $broadcast['id'], $userId, $language);

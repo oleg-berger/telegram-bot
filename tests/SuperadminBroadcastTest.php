@@ -86,6 +86,69 @@ final class SuperadminBroadcastTest extends TestCase
         return [$messages, $translations, $mails];
     }
 
+    #[\PHPUnit\Framework\Attributes\DataProvider('broadcastAuthors')]
+    public function testRegisteredAuthorReceivesNotificationsButNotTheirOwnDelivery(int $author): void
+    {
+        $this->user($author, 'ES');
+        $this->user(1, 'FR');
+        $draft = $this->draft($author);
+        $this->drain();
+        if ($author === 99) {
+            $this->click($author, "draft:submit:{$draft['id']}:{$draft['version']}");
+            $this->click(100, "draft:approve:{$draft['id']}:" . ($draft['version'] + 1));
+        } else {
+            $this->click($author, "draft:send:{$draft['id']}:{$draft['version']}");
+        }
+        [$messages, $translations, $mails] = $this->drain();
+        self::assertSame([['private1@example.com', 'FR:Private subject', 'FR:Private original <tag> 😀']], $mails);
+        self::assertSame(['FR', 'FR'], array_column($translations, 1));
+        self::assertCount(1, array_filter($messages, static fn ($message) => $message['id'] === 1 && $message['text'] === 'FR:Private original <tag> 😀'));
+        $authorMessages = array_values(array_filter($messages, static fn ($message) => $message['id'] === $author));
+        $notification = Messages::text('RU', $author === 99 ? 'broadcast_approved_author' : 'broadcast_started', ['id' => 1, 'recipients' => 1]);
+        self::assertContains($notification, array_column($authorMessages, 'text'));
+        foreach ($authorMessages as $message) {
+            self::assertStringNotContainsString('Private original', $message['text']);
+        }
+        self::assertSame(1, $this->store->broadcast(1)['reported']);
+        $reports = array_values(array_filter($messages, static fn ($message) => str_contains($message['text'], 'Telegram:')));
+        self::assertCount(1, $reports);
+        self::assertSame(100, $reports[0]['id']);
+        self::assertSame(Messages::text('RU', 'broadcast_report', ['id' => 1]) . "\n" . Messages::text('RU', 'broadcast_report_telegram', ['done' => 1, 'skipped' => 0, 'failed' => 0]) . "\n" . Messages::text('RU', 'broadcast_report_email', ['done' => 1, 'skipped' => 0, 'failed' => 0]), $reports[0]['text']);
+        self::assertFalse($this->store->transaction(fn () => $this->store->addCatchup($author, 'ES')));
+        self::assertSame(1, $this->store->broadcast(1)['reported']);
+        self::assertSame([[], [], []], $this->drain());
+        self::assertStringNotContainsString('Private', json_encode($this->logs, JSON_THROW_ON_ERROR));
+        self::assertStringNotContainsString('private', json_encode($this->logs, JSON_THROW_ON_ERROR));
+    }
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('broadcastAuthors')]
+    public function testOnlyRegisteredAuthorDoesNotCreateDeliveryOrTranslationJobs(int $author): void
+    {
+        $this->user($author, 'ES');
+        $draft = $this->draft($author);
+        $this->drain();
+        if ($author === 99) {
+            $this->click($author, "draft:submit:{$draft['id']}:{$draft['version']}");
+            $this->click(100, "draft:approve:{$draft['id']}:" . ($draft['version'] + 1));
+        } else {
+            $this->click($author, "draft:send:{$draft['id']}:{$draft['version']}");
+        }
+        [$messages, $translations, $mails] = $this->drain();
+        self::assertSame([], $translations);
+        self::assertSame([], $mails);
+        self::assertSame('ready', $this->store->broadcast(1)['status']);
+        self::assertSame(1, $this->store->broadcast(1)['reported']);
+        $reports = array_values(array_filter($messages, static fn ($message) => str_contains($message['text'], 'Telegram:')));
+        self::assertCount(1, $reports);
+        self::assertStringContainsString(Messages::text('RU', 'broadcast_report_telegram', ['done' => 0, 'skipped' => 0, 'failed' => 0]), $reports[0]['text']);
+        self::assertStringContainsString(Messages::text('RU', 'broadcast_report_email', ['done' => 0, 'skipped' => 0, 'failed' => 0]), $reports[0]['text']);
+    }
+
+    public static function broadcastAuthors(): array
+    {
+        return ['admin' => [99], 'superadmin' => [100]];
+    }
+
     public function testOwnPreviewAndEditingContainOnlyTheSelectedField(): void
     {
         $draft = $this->draft();
